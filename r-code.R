@@ -13,13 +13,15 @@ library(geosphere)
 library(BiodiversityR)
 library(gmodels)
 library(ncdf4)
+library(ape)
+library(factoextra)
 
 Sys.getlocale()
 # "English_United States.1252"
 Sys.setlocale(locale = "cht")
 
 pn <- 19999 # caution: may be very time consuming
-
+d0 <- 
 d <- fread("data.csv")
 d[, site.ordered := ordered(site, levels = d[, .(area, site, lat, lon)] %>% unique %>% .[order(lat, decreasing = T)] %>% .$site)]
 d[, substrate.ordered := ordered(substrate, levels = c("living snail", "hermit crab", "cobble", "reef"))]
@@ -526,8 +528,7 @@ ggarrange(f.mud2 + coord_fixed(), f.mud1 + coord_fixed(), align = "hv")
 
 
 #### SST cluster
-d.cluster <- d0
-d.cluster.site <- d.cluster[, .(lat, lon, area, site)] %>% unique
+d.cluster.site <- fread("data-site.csv")
 YYYY <- 2000:2020
 MONTH <- 1:12
 d.cluster.site.SST <-
@@ -555,7 +556,6 @@ f0 <-
   xlab("Year")
 
 
-library(ape)
 d.cluster.site.SST.wide <- 
   d.cluster.site.SST %>% 
   .[, .(SSTmonthly = mean(SSTmonthly)), by = list(site, site.ordered, area, area.ordered, date, YYYY, MONTH)] %>%
@@ -576,7 +576,6 @@ f1 <-
   xlab("PCoA1 (%)") +
   ylab("PCoA2 (%)")
 
-library(factoextra)
 f21 <- 
   fviz_nbclust(d.cluster.site.SST.wide[, -1:-4], kmeans, method = "wss", k.max = 10, diss = SST.dist) +
   theme_pubr(8, border = T)
@@ -589,7 +588,7 @@ hclust.fit <- hclust(SST.dist, method = "ward.D")
 color14 <- c('#00429d', '#325da9', '#4e78b5', '#6694c1', '#80b1cc', '#9dced6', '#c0eade', '#ffdac4', '#ffb3a7', '#fb8a8c', '#eb6574', '#d5405e', '#b81b4a', '#93003a')
 label.cols <- 
   data.table(site = hclust.fit$labels) %>% 
-  merge(d.site.SST[, .(site.ordered, area.ordered, site, area)] %>% unique, by = "site", sort = F) %T>% print %>% {
+  merge(d.cluster.site.SST[, .(site.ordered, area.ordered, site, area)] %>% unique, by = "site", sort = F) %T>% print %>% {
     foo <- .
     foo[, col := area.ordered]
     levels(foo$col) <- color14 %>% rev
