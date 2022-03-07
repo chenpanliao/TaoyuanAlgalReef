@@ -616,3 +616,25 @@ ggarrange(
   f3,
   ncol = 1, nrow = 3, heights = c(0.8, 0.6, 2)
 ) 
+
+#### coverage plot
+d.cover <- fread("coverage.csv") %>% .[, benthos := factor(benthos, levels = c("CCA", "MA", "Turf", "ACA", "Zoantharia"))]
+d.cover.ave <- d.cover[, .(cover.ave = mean(cover)), by = .(site, season, benthos)]
+d.cover.wide <- 
+  dcast(d.cover, site + season + replicate ~ benthos, value.var = "cover") %>% 
+  .[, Others := 100 - ACA - CCA - MA - Turf - Zoantharia]
+d.cover.ave.wide <-
+  dcast(d.cover.ave, site + season ~ benthos, value.var = "cover.ave") %>% 
+  .[, Others := 100 - ACA - CCA - MA - Turf - Zoantharia]
+
+d.cover.ave.wide %>%
+  melt(id.vars = c("site", "season"), variable.name = "benthos", value.name = "coverage") %>%
+  ggplot(aes(season)) +
+  geom_col(aes(y = coverage, fill = benthos), color = 1, width = 0.8, position = position_stack(reverse = T)) +
+  scale_y_continuous("Coverage (%)", expand = expansion(0), limits = c(0, 120), breaks = seq(0,100,10)) +
+  scale_fill_manual("Benthos", values = c('#00348c', '#535195', '#80709d', '#a792a5', '#cbb7ae', '#dee1be')) +
+  coord_flip() +
+  theme_pubr(legend = "right", border = T, base_size = 8) +
+  theme(legend.text = element_text(size = 8)) +
+  scale_x_discrete("Site-Season", expand = expansion(0)) +
+  theme(legend.key.size = unit(3, "mm"))
